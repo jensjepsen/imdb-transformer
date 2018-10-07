@@ -2,7 +2,7 @@ from torchtext import data
 from torchtext import datasets
 from torchtext.vocab import GloVe
 
-def get_imdb():
+def get_imdb(batch_size):
 	TEXT = data.Field(lower=True, include_lengths=True, batch_first=True)
 	LABEL = data.Field(sequential=False)
 
@@ -25,8 +25,12 @@ def get_imdb():
 
 	# make iterator for splits
 	train_iter, test_iter = data.BucketIterator.splits(
-	    (train, test), batch_size=3,)
+	    (train, test), batch_size=batch_size,)
 
 	return train_iter, test_iter
+
+if __name__ == "__main__":
+	train, test = get_imdb(5)
+	b = next(train)
 
 
