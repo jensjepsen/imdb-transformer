@@ -10,7 +10,7 @@ class MultiHeadAttention(nn.Module):
 		self.num_heads = num_heads
 
 		self.head_size = self.hidden_size / num_heads
-
+                print "HEAD SIZE",self.head_size
 		self.q_linear = nn.Linear(self.input_size,self.hidden_size)
 		self.k_linear = nn.Linear(self.input_size,self.hidden_size)
 		self.v_linear = nn.Linear(self.input_size,self.hidden_size)
@@ -25,11 +25,13 @@ class MultiHeadAttention(nn.Module):
 		v_proj = self.v_linear(v).view(v.size(0), v.size(1) * self.num_heads,self.head_size)
 
 		unscaled_weights = torch.matmul(q_proj,k_proj.transpose(2,1))
-		weights = self.softmax(unscaled_weights / torch.sqrt(Variable(torch.Tensor([self.head_size * 1.0]))))
+		weights = self.softmax(unscaled_weights / torch.sqrt(torch.Tensor([self.head_size * 1.0]).to(unscaled_weights)))
 
 		weighted_v = torch.matmul(weights,v_proj)
 
 		joint_proj = self.joint_linear(weighted_v.view(q.size(0),q.size(1),self.hidden_size))
+
+                print joint_proj.size()
 
 		return joint_proj
 
@@ -40,7 +42,7 @@ class NoOp(nn.Module):
 class Block(nn.Module):
 	def __init__(self,input_size,hidden_size,num_heads,activation=nn.ReLU):
 		super(Block,self).__init__()
-		self.attention = MultiHeadAttention(input_size,input_size,num_heads)
+		self.attention = MultiHeadAttention(input_size,hidden_size,num_heads)
 		self.attention_norm = NoOp()#nn.LayerNorm(input_size)
 
 		self.ff = nn.Sequential(
@@ -74,16 +76,18 @@ class Transformer(nn.Module):
 class Net(nn.Module):
 	def __init__(self,embeddings):
 		super(Net,self).__init__()
-		self.embeddings = nn.Embbeding.from_pretrained(embeddings)
-		self.transformer = Transformer(300,128,128,3)
-		self.output = nn.Linear(128,3)
+		self.embeddings = nn.Embedding.from_pretrained(embeddings)
+                self.emb_ff = nn.Linear(300,64)
+		self.transformer = Transformer(64,64,64,1,4)
+		self.output = nn.Linear(64,3)
 
 	def forward(self,x):
 		x_size = x.size()
-		x = x.view(-1,300)
-		x = self.embeddings(x)
-		x = x.view(*(x_size + (,300)))
+		x = x.view(-1)
+		x = self.emb_ff(self.embeddings(x))
+		x = x.view(*(x_size + (64,)))
 		x = self.transformer(x)
+                x = x.mean(dim=1)
 		return self.output(x)
 
 

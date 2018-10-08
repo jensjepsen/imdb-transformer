@@ -1,9 +1,15 @@
 from torchtext import data
 from torchtext import datasets
 from torchtext.vocab import GloVe
+import string
+def tokenize(input):
+  input = input.lower()
+  for p in string.punctuation:
+    input = input.replace(p," ")
+  return input.strip().split()
 
 def get_imdb(batch_size):
-	TEXT = data.Field(lower=True, include_lengths=True, batch_first=True)
+	TEXT = data.Field(lower=True, include_lengths=True, batch_first=True,tokenize=tokenize,fix_length=30)
 	LABEL = data.Field(sequential=False)
 
 
@@ -25,9 +31,9 @@ def get_imdb(batch_size):
 
 	# make iterator for splits
 	train_iter, test_iter = data.BucketIterator.splits(
-	    (train, test), batch_size=batch_size,device='cuda:0')
+	    (train, test), batch_size=batch_size)
 
-	return train_iter, test_iter,vectors
+	return train_iter, test_iter,TEXT.vocab.vectors
 
 if __name__ == "__main__":
 	train, test = get_imdb(5)
