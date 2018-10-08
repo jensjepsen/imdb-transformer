@@ -31,7 +31,6 @@ class MultiHeadAttention(nn.Module):
 
 		joint_proj = self.joint_linear(weighted_v.view(q.size(0),q.size(1),self.hidden_size))
 
-                print joint_proj.size()
 
 		return joint_proj
 
