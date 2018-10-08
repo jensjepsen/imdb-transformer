@@ -25,9 +25,9 @@ def get_imdb(batch_size):
 
 	# make iterator for splits
 	train_iter, test_iter = data.BucketIterator.splits(
-	    (train, test), batch_size=batch_size,)
+	    (train, test), batch_size=batch_size,device='cuda:0')
 
-	return iter(train_iter), iter(test_iter)
+	return train_iter, test_iter,vectors
 
 if __name__ == "__main__":
 	train, test = get_imdb(5)

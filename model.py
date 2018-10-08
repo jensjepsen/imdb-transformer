@@ -76,8 +76,17 @@ class Net(nn.Module):
 		super(Net,self).__init__()
 		self.embeddings = nn.Embbeding.from_pretrained(embeddings)
 		self.transformer = Transformer(300,128,128,3)
-		self.output = nn.Linear(128,1)
-		
+		self.output = nn.Linear(128,3)
+
+	def forward(self,x):
+		x_size = x.size()
+		x = x.view(-1,300)
+		x = self.embeddings(x)
+		x = x.view(*(x_size + (,300)))
+		x = self.transformer(x)
+		return self.output(x)
+
+
 
 if __name__ == "__main__":
 	t = Transformer(10,20,30,3,5)
