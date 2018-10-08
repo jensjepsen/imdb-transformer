@@ -46,13 +46,17 @@ class NoOp(nn.Module):
 class Block(nn.Module):
     def __init__(self,input_size,hidden_size,num_heads,activation=nn.ReLU):
         super(Block,self).__init__()
-        self.attention = MultiHeadAttention(input_size,hidden_size,num_heads)
+        self.attention = nn.Sequential(
+            MultiHeadAttention(input_size,hidden_size,num_heads),
+            nn.Dropout(0.1)
+            )
         self.attention_norm = nn.LayerNorm(input_size)
 
         self.ff = nn.Sequential(
             nn.Linear(input_size,hidden_size),
             activation(),
             nn.Linear(hidden_size,input_size)
+            nn.Dropout(0.1),
             )
         self.ff_norm = nn.LayerNorm(input_size)
 
@@ -70,7 +74,7 @@ class Transformer(nn.Module):
         super(Transformer,self).__init__()
 
         self.blocks = nn.Sequential(
-                *[Block(input_size,hidden_size,num_heads,activation) 
+                *[nn.Block(input_size,hidden_size,num_heads,activation,dropout=dropout) 
                     for _ in xrange(num_blocks)]
             )
 
@@ -81,7 +85,7 @@ class Net(nn.Module):
     def __init__(self,embeddings,max_length):
         super(Net,self).__init__()
         self.embeddings = nn.Embedding.from_pretrained(embeddings)
-        self.emb_ff = nn.Sequential(nn.Linear(300,64))
+        self.emb_ff = nn.Linear(300,64)
         self.pos = nn.Linear(max_length,64)
         self.max_length = max_length
         self.transformer = Transformer(64,64,64,2,4)
