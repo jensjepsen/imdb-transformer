@@ -46,22 +46,19 @@ class NoOp(nn.Module):
 class Block(nn.Module):
     def __init__(self,input_size,hidden_size,num_heads,activation=nn.ReLU):
         super(Block,self).__init__()
-        self.attention = nn.Sequential(
-            MultiHeadAttention(input_size,hidden_size,num_heads),
-            nn.Dropout(0.1)
-            )
+        self.attention = MultiHeadAttention(input_size,hidden_size,num_heads)
         self.attention_norm = nn.LayerNorm(input_size)
-
+        self.attention_dropout = nn.Dropout(0.1)
         self.ff = nn.Sequential(
             nn.Linear(input_size,hidden_size),
             activation(),
-            nn.Linear(hidden_size,input_size)
+            nn.Linear(hidden_size,input_size),
             nn.Dropout(0.1),
             )
         self.ff_norm = nn.LayerNorm(input_size)
 
     def forward(self,x):
-        attended = self.attention_norm(self.attention(x,x,x) + x)
+        attended = self.attention_norm(self.attention_dropout(self.attention(x,x,x)) + x)
         return self.ff_norm(self.ff(attended) + x)
 
 
@@ -74,7 +71,7 @@ class Transformer(nn.Module):
         super(Transformer,self).__init__()
 
         self.blocks = nn.Sequential(
-                *[nn.Block(input_size,hidden_size,num_heads,activation,dropout=dropout) 
+                *[Block(input_size,hidden_size,num_heads,activation) 
                     for _ in xrange(num_blocks)]
             )
 
@@ -84,19 +81,20 @@ class Transformer(nn.Module):
 class Net(nn.Module):
     def __init__(self,embeddings,max_length):
         super(Net,self).__init__()
-        self.embeddings = nn.Embedding.from_pretrained(embeddings)
-        self.emb_ff = nn.Linear(300,64)
-        self.pos = nn.Linear(max_length,64)
+        self.embeddings = nn.Embedding.from_pretrained(embeddings,freeze=False)
+        self.model_size = 128
+        self.emb_ff = nn.Linear(300,self.model_size)
+        self.pos = nn.Linear(max_length,self.model_size)
         self.max_length = max_length
-        self.transformer = Transformer(64,64,64,2,4)
-        self.output = nn.Linear(64,2)
+        self.transformer = Transformer(self.model_size,self.model_size,self.model_size,1,1)
+        self.output = nn.Linear(self.model_size,2)
 
     def forward(self,x):
         x_size = x.size()
         x = x.view(-1)
         x = self.emb_ff(self.embeddings(x))
         pos = self.pos(get_pos_onehot(self.max_length).to(x)).unsqueeze(0)
-        x = x.view(*(x_size + (64,)))
+        x = x.view(*(x_size + (self.model_size,)))
         #x += pos
         x = self.transformer(x)
         x = x.mean(dim=1)

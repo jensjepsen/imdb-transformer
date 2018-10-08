@@ -7,6 +7,7 @@ from model import Net
 DEVICE = "cuda:0"
 
 def val(model,test):
+        model.eval()
 	with torch.no_grad():
 		correct = 0.0
 		total = 0.0
@@ -27,6 +28,7 @@ def train():
 	loss_mavg = 0.0
 	for i in xrange(epochs):
                 val(model,test)
+                model.train()
 		for j,b in enumerate(iter(train)):
 			optimizer.zero_grad()
 			model_out = model(b.text[0].to(DEVICE))
