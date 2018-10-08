@@ -20,7 +20,7 @@ def train():
 	train, test, vectors = get_imdb(128)
 	epochs = 1000
 
-	model = Net(embeddings=vectors).to(DEVICE)
+	model = Net(embeddings=vectors,max_length=100).to(DEVICE)
 	optimizer = optim.Adam((p for p in model.parameters() if p.requires_grad),lr=0.001)
 	criterion = nn.BCEWithLogitsLoss()
 

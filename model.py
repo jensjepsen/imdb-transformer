@@ -84,9 +84,8 @@ class Net(nn.Module):
         self.emb_ff = nn.Linear(300,64)
         self.pos = nn.Linear(max_length,64)
         self.max_length = max_length
-
-		self.transformer = Transformer(64,64,64,1,4)
-		self.output = nn.Linear(64,1)
+        self.transformer = Transformer(64,64,64,1,4)
+        self.output = nn.Linear(64,1)
 
 	def forward(self,x):
 		pos = self.pos(get_pos_onehot(max_length)).unsqueeze(0)
