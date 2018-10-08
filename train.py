@@ -1,9 +1,20 @@
+import torch
 from torch import optim
 from torch import nn
 from dataloader import get_imdb
 from model import Net
 
 DEVICE = "cuda:0"
+
+def val(model,test):
+	with torch.no_grad():
+		correct = 0.0
+		total = 0.0
+		for b in test:
+			model_out = model(b.text[0].to(DEVICE)).to("cpu").numpy()
+			correct += (model_out.argmax() == b.label).sum()
+			total += b.label.size(0)
+		print "{}%, {}/{}".format(correct / total,correct,total)
 
 def train():
 	train, test, vectors = get_imdb(128)
@@ -23,8 +34,7 @@ def train():
 			optimizer.step()
 			loss_mavg = loss_mavg * 0.9 + loss.item()
 		print "Epoch {}, Batch {}, Loss {}".format(i,j,loss_mavg)
-
-
+		val(model,test)
 
 if __name__ == "__main__":
 	train()
