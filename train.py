@@ -17,7 +17,7 @@ def val(model,test):
 		print "{}%, {}/{}".format(correct / total,correct,total)
 
 def train():
-	train, test, vectors = get_imdb(1)
+	train, test, vectors = get_imdb(128)
 	epochs = 1000
 
 	model = Net(embeddings=vectors).to(DEVICE)

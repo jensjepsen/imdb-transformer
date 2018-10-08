@@ -24,14 +24,13 @@ class MultiHeadAttention(nn.Module):
 		k_proj = self.k_linear(k).view(k.size(0), k.size(1), self.num_heads,self.head_size).transpose(1,2)
 		v_proj = self.v_linear(v).view(v.size(0), v.size(1), self.num_heads,self.head_size).transpose(1,2)
 
-		# We now have [batch size] x [num heads] x [sequence length] x [head size]
 
 		unscaled_weights = torch.matmul(q_proj,k_proj.transpose(2,3))
 		weights = self.softmax(unscaled_weights / torch.sqrt(torch.Tensor([self.head_size * 1.0]).to(unscaled_weights)))
 
 		weighted_v = torch.matmul(weights,v_proj)
 
-		weighted_v = weighted_v.tranpose(1,2)
+		weighted_v = weighted_v.transpose(1,2).contiguous()
 
 		joint_proj = self.joint_linear(weighted_v.view(q.size(0),q.size(1),self.hidden_size))
 
@@ -81,7 +80,7 @@ class Net(nn.Module):
 		super(Net,self).__init__()
 		self.embeddings = nn.Embedding.from_pretrained(embeddings)
                 self.emb_ff = nn.Linear(300,64)
-		self.transformer = Transformer(64,64,64,3,4)
+		self.transformer = Transformer(64,64,64,1,4)
 		self.output = nn.Linear(64,1)
 
 	def forward(self,x):
