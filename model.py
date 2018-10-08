@@ -81,10 +81,10 @@ class Net(nn.Module):
     def __init__(self,embeddings,max_length):
         super(Net,self).__init__()
         self.embeddings = nn.Embedding.from_pretrained(embeddings)
-        self.emb_ff = nn.Linear(300,64)
+        self.emb_ff = nn.Sequential(nn.Linear(300,64))
         self.pos = nn.Linear(max_length,64)
         self.max_length = max_length
-        self.transformer = Transformer(64,64,64,1,4)
+        self.transformer = Transformer(64,64,64,2,4)
         self.output = nn.Linear(64,2)
 
     def forward(self,x):
@@ -93,7 +93,7 @@ class Net(nn.Module):
         x = self.emb_ff(self.embeddings(x))
         pos = self.pos(get_pos_onehot(self.max_length).to(x)).unsqueeze(0)
         x = x.view(*(x_size + (64,)))
-        x += pos
+        #x += pos
         x = self.transformer(x)
         x = x.mean(dim=1)
         return self.output(x)

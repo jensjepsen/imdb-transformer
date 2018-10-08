@@ -12,15 +12,15 @@ def val(model,test):
 		total = 0.0
 		for b in test:
 			model_out = model(b.text[0].to(DEVICE)).to("cpu").numpy()
-			correct += (model_out.argmax() == b.label).sum()
+			correct += (model_out.argmax(axis=1) == b.label.numpy()).sum()
 			total += b.label.size(0)
 		print "{}%, {}/{}".format(correct / total,correct,total)
 
 def train():
-	train, test, vectors = get_imdb(128)
+	train, test, vectors = get_imdb(128,max_length=500)
 	epochs = 1000
 
-	model = Net(embeddings=vectors).to(DEVICE)
+	model = Net(embeddings=vectors,max_length=500).to(DEVICE)
 	optimizer = optim.Adam((p for p in model.parameters() if p.requires_grad))
 	criterion = nn.CrossEntropyLoss()
 

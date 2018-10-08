@@ -8,8 +8,8 @@ def tokenize(input):
     input = input.replace(p," ")
   return input.strip().split()
 
-def get_imdb(batch_size):
-	TEXT = data.Field(lower=True, include_lengths=True, batch_first=True,tokenize=tokenize,fix_length=100)
+def get_imdb(batch_size,max_length):
+	TEXT = data.Field(lower=True, include_lengths=True, batch_first=True,tokenize=tokenize,fix_length=max_length)
 	LABEL = data.Field(sequential=False,unk_token=None,pad_token=None)
 
 
