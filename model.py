@@ -2,6 +2,8 @@ import torch
 from torch import nn
 from torch.autograd import Variable
 
+from pos import get_pos_onehot
+
 class MultiHeadAttention(nn.Module):
 	def __init__(self,input_size,hidden_size,num_heads):
 		super(MultiHeadAttention,self).__init__()
@@ -76,20 +78,24 @@ class Transformer(nn.Module):
 		return self.blocks(x)
 
 class Net(nn.Module):
-	def __init__(self,embeddings):
+	def __init__(self,embeddings,max_length):
 		super(Net,self).__init__()
 		self.embeddings = nn.Embedding.from_pretrained(embeddings)
-                self.emb_ff = nn.Linear(300,64)
+        self.emb_ff = nn.Linear(300,64)
+        self.pos = nn.Linear(max_length,64)
+        self.max_length = max_length
+
 		self.transformer = Transformer(64,64,64,1,4)
 		self.output = nn.Linear(64,1)
 
 	def forward(self,x):
+		pos = self.pos(get_pos_onehot(max_length)).unsqueeze(0)
 		x_size = x.size()
 		x = x.view(-1)
-		x = self.emb_ff(self.embeddings(x))
+		x = self.emb_ff(self.embeddings(x)) + pos
 		x = x.view(*(x_size + (64,)))
 		x = self.transformer(x)
-                x = x.mean(dim=1)
+        x = x.mean(dim=1)
 		return self.output(x)
 
 
