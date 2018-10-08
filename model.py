@@ -20,14 +20,18 @@ class MultiHeadAttention(nn.Module):
 		self.softmax = nn.Softmax(dim=1)
 
 	def forward(self,q,k,v):
-		q_proj = self.q_linear(q).view(q.size(0), q.size(1) * self.num_heads,self.head_size)
-		k_proj = self.k_linear(k).view(k.size(0), k.size(1) * self.num_heads,self.head_size)
-		v_proj = self.v_linear(v).view(v.size(0), v.size(1) * self.num_heads,self.head_size)
+		q_proj = self.q_linear(q).view(q.size(0), q.size(1), self.num_heads,self.head_size).transpose(1,2)
+		k_proj = self.k_linear(k).view(k.size(0), k.size(1), self.num_heads,self.head_size).transpose(1,2)
+		v_proj = self.v_linear(v).view(v.size(0), v.size(1), self.num_heads,self.head_size).transpose(1,2)
 
-		unscaled_weights = torch.matmul(q_proj,k_proj.transpose(2,1))
+		# We now have [batch size] x [num heads] x [sequence length] x [head size]
+
+		unscaled_weights = torch.matmul(q_proj,k_proj.transpose(2,3))
 		weights = self.softmax(unscaled_weights / torch.sqrt(torch.Tensor([self.head_size * 1.0]).to(unscaled_weights)))
 
 		weighted_v = torch.matmul(weights,v_proj)
+
+		weighted_v = weighted_v.tranpose(1,2)
 
 		joint_proj = self.joint_linear(weighted_v.view(q.size(0),q.size(1),self.hidden_size))
 
