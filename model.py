@@ -42,14 +42,14 @@ class Block(nn.Module):
 	def __init__(self,input_size,hidden_size,num_heads,activation=nn.ReLU):
 		super(Block,self).__init__()
 		self.attention = MultiHeadAttention(input_size,hidden_size,num_heads)
-		self.attention_norm = NoOp()#nn.LayerNorm(input_size)
+		self.attention_norm = nn.LayerNorm(input_size)
 
 		self.ff = nn.Sequential(
 			nn.Linear(input_size,hidden_size),
 			activation(),
 			nn.Linear(hidden_size,input_size)
 			)
-		self.ff_norm = NoOp()#nn.LayerNorm(input_size)
+		self.ff_norm = nn.LayerNorm(input_size)
 
 	def forward(self,x):
 		attended = self.attention_norm(self.attention(x,x,x) + x)
@@ -77,8 +77,8 @@ class Net(nn.Module):
 		super(Net,self).__init__()
 		self.embeddings = nn.Embedding.from_pretrained(embeddings)
                 self.emb_ff = nn.Linear(300,64)
-		self.transformer = Transformer(64,64,64,1,4)
-		self.output = nn.Linear(64,3)
+		self.transformer = Transformer(64,64,64,3,4)
+		self.output = nn.Linear(64,1)
 
 	def forward(self,x):
 		x_size = x.size()

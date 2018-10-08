@@ -9,8 +9,8 @@ def tokenize(input):
   return input.strip().split()
 
 def get_imdb(batch_size):
-	TEXT = data.Field(lower=True, include_lengths=True, batch_first=True,tokenize=tokenize,fix_length=30)
-	LABEL = data.Field(sequential=False)
+	TEXT = data.Field(lower=True, include_lengths=True, batch_first=True,tokenize=tokenize,fix_length=100)
+	LABEL = data.Field(sequential=False,unk_token=None,pad_token=None)
 
 
 	# make splits for data
@@ -36,7 +36,10 @@ def get_imdb(batch_size):
 	return train_iter, test_iter,TEXT.vocab.vectors
 
 if __name__ == "__main__":
-	train, test = get_imdb(5)
-	b = next(train)
-
+	train, test, vectors = get_imdb(1)
+        from collections import Counter
+        cnt = Counter()
+        for b in iter(train):
+            cnt[b.label[0].item()] += 1
+        print cnt
 
