@@ -88,11 +88,12 @@ class Net(nn.Module):
         self.output = nn.Linear(64,1)
 
     def forward(self,x):
-        pos = self.pos(get_pos_onehot(max_length)).unsqueeze(0)
         x_size = x.size()
         x = x.view(-1)
-        x = self.emb_ff(self.embeddings(x)) + pos
+        x = self.emb_ff(self.embeddings(x))
+        pos = self.pos(get_pos_onehot(self.max_length).to(x)).unsqueeze(0)
         x = x.view(*(x_size + (64,)))
+        x += pos
         x = self.transformer(x)
         x = x.mean(dim=1)
         return self.output(x)
