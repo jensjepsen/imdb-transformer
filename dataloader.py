@@ -16,7 +16,7 @@ def get_imdb(batch_size):
 	print('vars(train[0])', vars(train[0]))
 
 	# build the vocabulary
-	TEXT.build_vocab(train, vectors=GloVe(name='6B', dim=300))
+	TEXT.build_vocab(train, vectors=GloVe(name='42B', dim=300,max_vectors=500000))
 	LABEL.build_vocab(train)
 
 	# print vocab information
@@ -27,7 +27,7 @@ def get_imdb(batch_size):
 	train_iter, test_iter = data.BucketIterator.splits(
 	    (train, test), batch_size=batch_size,)
 
-	return train_iter, test_iter
+	return iter(train_iter), iter(test_iter)
 
 if __name__ == "__main__":
 	train, test = get_imdb(5)
