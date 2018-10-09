@@ -33,10 +33,10 @@ def get_imdb(batch_size,max_length):
 	train_iter, test_iter = data.BucketIterator.splits(
 	    (train, test), batch_size=batch_size)
 
-	return train_iter, test_iter,TEXT.vocab.vectors
+	return train_iter, test_iter,TEXT.vocab.vectors, TEXT.vocab
 
 if __name__ == "__main__":
-	train, test, vectors = get_imdb(1)
+	train, test, vectors, vocab = get_imdb(1)
         from collections import Counter
         cnt = Counter()
         for b in iter(train):

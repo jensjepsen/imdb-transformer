@@ -8,14 +8,19 @@ DEVICE = "cuda:0"
 
 import visdom
 
-def plot_weights(model,windows):
+def num2words(vocab,vec):
+    return [vocab.itos[i] for i in vec]
+
+
+def plot_weights(model,windows,vocab,batch):
     weights = model.transformer.blocks[0].attention.weights.to("cpu").numpy()
     weights = weights[0]
+    names = num2words(vocab,batch[0])
     for weight, window in zip(weights,windows):
         visdom.heatmap(weights)
 
 
-def val(model,test):
+def val(model,test,vocab):
     model.eval()
     visdom_windows = None
     with torch.no_grad():
@@ -23,14 +28,14 @@ def val(model,test):
         total = 0.0
         for i,b in enumerate(test):
             if i == 0:
-                plot_weights(model,visdom_windows)
+                plot_weights(model,visdom_windows,vocab,b)
             model_out = model(b.text[0].to(DEVICE)).to("cpu").numpy()
             correct += (model_out.argmax(axis=1) == b.label.numpy()).sum()
             total += b.label.size(0)
         print "{}%, {}/{}".format(correct / total,correct,total)
 
 def train():
-    train, test, vectors = get_imdb(128,max_length=500)
+    train, test, vectors, vocab = get_imdb(128,max_length=500)
     epochs = 1000
 
     model = Net(embeddings=vectors,max_length=500).to(DEVICE)
