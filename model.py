@@ -23,7 +23,7 @@ class MultiHeadAttention(nn.Module):
 
         self.joint_linear = nn.Linear(self.hidden_size,self.hidden_size)
 
-        self.softmax = nn.Softmax(dim=1)
+        self.softmax = nn.Softmax(dim=-1)
 
     def forward(self,q,k,v):
         q_proj = self.q_linear(q).view(q.size(0), q.size(1), self.num_heads,self.head_size).transpose(1,2)
@@ -33,17 +33,17 @@ class MultiHeadAttention(nn.Module):
 
         unscaled_weights = torch.matmul(q_proj,k_proj.transpose(2,3))
         weights = self.softmax(unscaled_weights / torch.sqrt(torch.Tensor([self.head_size * 1.0]).to(unscaled_weights)))
-
+        
         weighted_v = torch.matmul(weights,v_proj)
 
         weighted_v = weighted_v.transpose(1,2).contiguous()
-
+        
         joint_proj = self.joint_linear(weighted_v.view(q.size(0),q.size(1),self.hidden_size))
 
         self.weights = weights
 
 
-        return joint_proj,weights
+        return joint_proj
 
 
 class Block(nn.Module):
@@ -96,7 +96,7 @@ class Transformer(nn.Module):
         return self.blocks(x)
 
 class Net(nn.Module):
-    def __init__(self,embeddings,max_length,model_size=128,num_heads=1,num_blocks=1,dropout=0.1):
+    def __init__(self,embeddings,max_length,model_size=128,num_heads=1,num_blocks=4,dropout=0.1):
         super(Net,self).__init__()
         self.embeddings = nn.Embedding.from_pretrained(embeddings,freeze=False)
         self.model_size = model_size
