@@ -14,24 +14,24 @@ def num2words(vocab,vec):
 
 vis = visdom.Visdom()
 
-def plot_weights(model,windows,b):
+def plot_weights(model,windows,b,vocab):
     try:
         weights = model.transformer.blocks[0].attention.weights.to("cpu").numpy()
     except AttributeError:
         print "No weights yet"
         return None
-    text,dims = b
+    idx = 1
+    text,dims = b.text[0], b.text[1]
     if windows is None:
         windows = [None] * weights.shape[0]
     new_windows = []
-    weights = weights[0]
-    names = num2words(vocab,test[0].numpy)
-    dims = dims[0].item()
+    weights = weights[idx]
+    dims = dims[idx].item()
+    names = num2words(vocab,text[idx].numpy()[:dims])
     weights = weights[:,:dims,:dims]
 
     for weight, window in zip(weights,windows):
-        print
-        new_windows.append(vis.heatmap(weight,column_names=names,row_names=names,win=window))
+        new_windows.append(vis.heatmap(weight,opts=dict(columnnames=names,rownames=names),win=window))
     return new_windows
 
 
@@ -43,7 +43,7 @@ def val(model,test,vocab):
         total = 0.0
         for i,b in enumerate(test):
             if i == 0:
-                visdom_windows = plot_weights(model,visdom_windows,b)
+                visdom_windows = plot_weights(model,visdom_windows,b,vocab)
 
             model_out = model(b.text[0].to(DEVICE)).to("cpu").numpy()
             correct += (model_out.argmax(axis=1) == b.label.numpy()).sum()
@@ -60,7 +60,7 @@ def train():
 
     loss_mavg = 0.0
     for i in xrange(epochs):
-        val(model,test)
+        val(model,test,vocab)
         model.train()
         for j,b in enumerate(iter(train)):
             optimizer.zero_grad()

@@ -96,11 +96,11 @@ class Transformer(nn.Module):
         return self.blocks(x)
 
 class Net(nn.Module):
-    def __init__(self,embeddings,max_length,model_size=128,num_heads=1,num_blocks=4,dropout=0.1):
+    def __init__(self,embeddings,max_length,model_size=128,num_heads=4,num_blocks=1,dropout=0.1):
         super(Net,self).__init__()
         self.embeddings = nn.Embedding.from_pretrained(embeddings,freeze=False)
         self.model_size = model_size
-        self.emb_ff = nn.Linear(embeddings.size(0),self.model_size)
+        self.emb_ff = nn.Linear(embeddings.size(1),self.model_size)
         self.pos = nn.Linear(max_length,self.model_size)
         self.max_length = max_length
         self.transformer = Transformer(

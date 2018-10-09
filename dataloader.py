@@ -39,8 +39,10 @@ def get_imdb(batch_size,max_length):
 if __name__ == "__main__":
     train, test, vectors,vocab = get_imdb(1,50)
     from collections import Counter
+    print list(enumerate(vocab.itos[:100]))
     cnt = Counter()
     for b in iter(train):
+        b.text
         cnt[b.label[0].item()] += 1
     print cnt
 
