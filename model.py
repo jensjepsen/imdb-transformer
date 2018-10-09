@@ -5,6 +5,10 @@ from torch.autograd import Variable
 from pos import get_pos_onehot
 
 class MultiHeadAttention(nn.Module):
+    """
+        A multihead attention module,
+        using scaled dot-product attention.
+    """
     def __init__(self,input_size,hidden_size,num_heads):
         super(MultiHeadAttention,self).__init__()
         self.input_size = input_size
@@ -12,7 +16,7 @@ class MultiHeadAttention(nn.Module):
         self.num_heads = num_heads
 
         self.head_size = self.hidden_size / num_heads
-        print "HEAD SIZE",self.head_size
+
         self.q_linear = nn.Linear(self.input_size,self.hidden_size)
         self.k_linear = nn.Linear(self.input_size,self.hidden_size)
         self.v_linear = nn.Linear(self.input_size,self.hidden_size)
@@ -41,21 +45,32 @@ class MultiHeadAttention(nn.Module):
 
         return joint_proj,weights
 
-class NoOp(nn.Module):
-    def forward(self,x):
-        return x
 
 class Block(nn.Module):
-    def __init__(self,input_size,hidden_size,num_heads,activation=nn.ReLU):
+    """
+        One block of the transformer.
+        Contains a multihead attention sublayer
+        followed by a feed forward network.
+    """
+    def __init__(self,input_size,hidden_size,num_heads,activation=nn.ReLU,dropout=None):
         super(Block,self).__init__()
+        self.dropout = dropout
+        
         self.attention = MultiHeadAttention(input_size,hidden_size,num_heads)
         self.attention_norm = nn.LayerNorm(input_size)
-        self.attention_dropout = nn.Dropout(0.1)
-        self.ff = nn.Sequential(
+
+        ff_layers = [
             nn.Linear(input_size,hidden_size),
             activation(),
             nn.Linear(hidden_size,input_size),
-            nn.Dropout(0.1),
+            ]
+
+        if self.dropout:
+            self.attention_dropout = nn.Dropout(dropout)
+            ff_layers.append(nn.Dropout(dropout))
+
+        self.ff = nn.Sequential(
+            *ff_layers
             )
         self.ff_norm = nn.LayerNorm(input_size)
 
@@ -66,14 +81,14 @@ class Block(nn.Module):
 
 
 class Transformer(nn.Module):
-    def __init__(self,input_size,hidden_size,ff_size,num_blocks,num_heads,activation=nn.ReLU):
+    def __init__(self,input_size,hidden_size,ff_size,num_blocks,num_heads,activation=nn.ReLU,dropout=None):
         """
-            Class defining the Transformer Network
+            A single Transformer Network
         """
         super(Transformer,self).__init__()
 
         self.blocks = nn.Sequential(
-                *[Block(input_size,hidden_size,num_heads,activation) 
+                *[Block(input_size,hidden_size,num_heads,activation,dropout=dropout) 
                     for _ in xrange(num_blocks)]
             )
 
@@ -81,14 +96,21 @@ class Transformer(nn.Module):
         return self.blocks(x)
 
 class Net(nn.Module):
-    def __init__(self,embeddings,max_length):
+    def __init__(self,embeddings,max_length,model_size=128,num_heads=1,num_blocks=1,dropout=0.1):
         super(Net,self).__init__()
         self.embeddings = nn.Embedding.from_pretrained(embeddings,freeze=False)
-        self.model_size = 128
-        self.emb_ff = nn.Linear(300,self.model_size)
+        self.model_size = model_size
+        self.emb_ff = nn.Linear(embeddings.size(0),self.model_size)
         self.pos = nn.Linear(max_length,self.model_size)
         self.max_length = max_length
-        self.transformer = Transformer(self.model_size,self.model_size,self.model_size,1,1)
+        self.transformer = Transformer(
+                        self.model_size,
+                        self.model_size,
+                        self.model_size,
+                        num_blocks,
+                        num_heads,
+                        dropout=dropout
+                        )
         self.output = nn.Linear(self.model_size,2)
 
     def forward(self,x):
@@ -97,7 +119,7 @@ class Net(nn.Module):
         x = self.emb_ff(self.embeddings(x))
         pos = self.pos(get_pos_onehot(self.max_length).to(x)).unsqueeze(0)
         x = x.view(*(x_size + (self.model_size,)))
-        #x += pos
+        x += pos
         x = self.transformer(x)
         x = x.mean(dim=1)
         return self.output(x)
