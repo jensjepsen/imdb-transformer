@@ -8,6 +8,10 @@ def tokenize(input):
         input = input.replace(p," ")
     return input.strip().split()
 
+
+def num2words(vocab,vec):
+    return [vocab.itos[i] for i in vec]
+
 def get_imdb(batch_size,max_length):
     TEXT = data.Field(lower=True, include_lengths=True, batch_first=True,tokenize=tokenize,fix_length=max_length)
     LABEL = data.Field(sequential=False,unk_token=None,pad_token=None)
@@ -42,7 +46,7 @@ if __name__ == "__main__":
     print list(enumerate(vocab.itos[:100]))
     cnt = Counter()
     for b in iter(train):
-        b.text
+        print num2word(b.text[0].numpy())
         cnt[b.label[0].item()] += 1
     print cnt
 

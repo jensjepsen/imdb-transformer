@@ -1,16 +1,12 @@
 import torch
 from torch import optim
 from torch import nn
-from dataloader import get_imdb
+from dataloader import get_imdb, num2words
 from model import Net
 
 DEVICE = "cuda:0"
 
 import visdom
-
-def num2words(vocab,vec):
-    return [vocab.itos[i] for i in vec]
-
 
 vis = visdom.Visdom()
 
