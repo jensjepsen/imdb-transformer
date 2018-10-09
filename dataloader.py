@@ -20,6 +20,7 @@ def get_imdb(batch_size,max_length):
 	print('train.fields', train.fields)
 	print('len(train)', len(train))
 	print('vars(train[0])', vars(train[0]))
+        print('vars(test[0])',vars(test[0]))
 
 	# build the vocabulary
 	TEXT.build_vocab(train, vectors=GloVe(name='42B', dim=300,max_vectors=500000))
@@ -36,7 +37,7 @@ def get_imdb(batch_size,max_length):
 	return train_iter, test_iter,TEXT.vocab.vectors
 
 if __name__ == "__main__":
-	train, test, vectors = get_imdb(1)
+	train, test, vectors = get_imdb(1,50)
         from collections import Counter
         cnt = Counter()
         for b in iter(train):

@@ -19,7 +19,7 @@ class MultiHeadAttention(nn.Module):
 
         self.joint_linear = nn.Linear(self.hidden_size,self.hidden_size)
 
-        self.softmax = nn.Softmax(dim=1)
+        self.softmax = nn.Softmax(dim=-1)
 
     def forward(self,q,k,v):
         q_proj = self.q_linear(q).view(q.size(0), q.size(1), self.num_heads,self.head_size).transpose(1,2)
@@ -29,17 +29,17 @@ class MultiHeadAttention(nn.Module):
 
         unscaled_weights = torch.matmul(q_proj,k_proj.transpose(2,3))
         weights = self.softmax(unscaled_weights / torch.sqrt(torch.Tensor([self.head_size * 1.0]).to(unscaled_weights)))
-
+        
         weighted_v = torch.matmul(weights,v_proj)
 
         weighted_v = weighted_v.transpose(1,2).contiguous()
-
+        
         joint_proj = self.joint_linear(weighted_v.view(q.size(0),q.size(1),self.hidden_size))
 
         self.weights = weights
 
 
-        return joint_proj,weights
+        return joint_proj
 
 class NoOp(nn.Module):
     def forward(self,x):
@@ -88,7 +88,7 @@ class Net(nn.Module):
         self.emb_ff = nn.Linear(300,self.model_size)
         self.pos = nn.Linear(max_length,self.model_size)
         self.max_length = max_length
-        self.transformer = Transformer(self.model_size,self.model_size,self.model_size,1,1)
+        self.transformer = Transformer(self.model_size,self.model_size,self.model_size,1,4)
         self.output = nn.Linear(self.model_size,2)
 
     def forward(self,x):
