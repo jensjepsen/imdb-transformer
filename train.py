@@ -1,74 +1,100 @@
 import torch
 from torch import optim
 from torch import nn
-from dataloader import get_imdb, num2words
+from dataloader import get_imdb
 from model import Net
 
-DEVICE = "cuda:0"
+try:
+    # try to import visdom for visualisation of attention weights
+    import visdom
+    from helpers import plot_weights
+    vis = visdom.Visdom()
+except ImportError:
+    vis = None
+    pass
 
-import visdom
-
-vis = visdom.Visdom()
-
-def plot_weights(model,windows,b,vocab):
-    try:
-        weights = model.transformer.blocks[0].attention.weights.to("cpu").numpy()
-    except AttributeError:
-        print "No weights yet"
-        return None
-    idx = 1
-    text,dims = b.text[0], b.text[1]
-    if windows is None:
-        windows = [None] * weights.shape[0]
-    new_windows = []
-    weights = weights[idx]
-    dims = dims[idx].item()
-    names = num2words(vocab,text[idx].numpy()[:dims])
-    weights = weights[:,:dims,:dims]
-
-    for weight, window in zip(weights,windows):
-        new_windows.append(vis.heatmap(weight,opts=dict(columnnames=names,rownames=names),win=window))
-    return new_windows
-
-
-def val(model,test,vocab):
+def val(model,test,vocab,device):
+    """
+        Evaluates model on the test set
+    """
     model.eval()
-    visdom_windows = None
+    if not vis is None:
+        visdom_windows = None
     with torch.no_grad():
         correct = 0.0
         total = 0.0
         for i,b in enumerate(test):
-            if i == 0:
-                visdom_windows = plot_weights(model,visdom_windows,b,vocab)
+            if not vis is None and i == 0:
+                visdom_windows = plot_weights(model,visdom_windows,b,vocab,vis)
 
-            model_out = model(b.text[0].to(DEVICE)).to("cpu").numpy()
+            model_out = model(b.text[0].to(device)).to("cpu").numpy()
             correct += (model_out.argmax(axis=1) == b.label.numpy()).sum()
             total += b.label.size(0)
         print "{}%, {}/{}".format(correct / total,correct,total)
 
-def train():
-    train, test, vectors, vocab = get_imdb(128,max_length=500)
-    epochs = 1000
+def train(max_length,hidden_size,
+            epochs,learning_rate,
+            device,num_heads,
+            dropout,train_word_embeddings):
+    """
+        Trains the classifier on the IMDB sentiment dataset
+    """
+    train, test, vectors, vocab = get_imdb(hidden_size,max_length=max_length)
 
-    model = Net(embeddings=vectors,max_length=500).to(DEVICE)
-    optimizer = optim.Adam((p for p in model.parameters() if p.requires_grad),lr=0.001)
+    model = Net(
+                hidden_size=hidden_size,embeddings=vectors,
+                max_length=max_length,num_heads=num_heads,
+                num_blocks=num_blocks, dropout=dropout,
+                train_word_embeddings=train_word_embeddings,
+                ).to(device)
+
+    optimizer = optim.Adam((p for p in model.parameters() if p.requires_grad),lr=learning_rate)
     criterion = nn.CrossEntropyLoss()
 
     loss_mavg = 0.0
-    for i in xrange(epochs):
-        val(model,test,vocab)
+    for i in xrange(0,epochs+1):
         model.train()
         for j,b in enumerate(iter(train)):
             optimizer.zero_grad()
-            model_out = model(b.text[0].to(DEVICE))
-            loss = criterion(model_out,b.label.to(DEVICE))
+            model_out = model(b.text[0].to(device))
+            loss = criterion(model_out,b.label.to(device))
             loss.backward()
             optimizer.step()
             loss_mavg = loss_mavg * 0.9 + loss.item()
         print "Epoch {}, Batch {}, Loss {}".format(i,j,loss_mavg)
 
+        # Validate on test-set every epoch
+        val(model,test,vocab,device)
+
 if __name__ == "__main__":
-    train()
+    import argparse
+    ap = argparse.ArgumentParser(description="Train a Transformer network for sentiment analysis")
+    
+    ap.add_argument("--max_length",default=500,dest="max_length",help="Maximum sequence length, \
+                                                                    sequences longer than this are truncated")
+    
+    ap.add_argument("--hidden_size",default=128,dest="hidden_size",help="Hidden size for all \
+                                                                    hidden layers of the model")
+    
+    ap.add_argument("--epochs",default=1000,dest="epochs",help="Number of epochs to train for")
+
+    ap.add_argument("--learning_rate",default=0.001,dest="learning_rate",help="Learning rate for optimizer")
+    
+    ap.add_argument("--device",default="cuda:0",dest="device",help="Device to use for training \
+                                                                    and evaluation e.g. (cpu, cuda:0)")
+    ap.add_argument("--num_heads",default=4,dest="num_heads",help="Number of attention heads in \
+                                                                    the Transformer network")
+    
+    ap.add_argument("--num_blocks",default=1,dest="num_blocks",help="Number of blocks in the Transformer network")
+    
+    ap.add_argument("--dropout",default=1,dest="dropout",help="Dropout (not keep_prob, but probability of ZEROING \
+                                                                    during training, i.e. keep_prob = 1 - dropout)")
+
+    ap.add_argument("--train_word_embeddings",default=True,dest="train_word_embeddings",help="Train GloVE word embeddings")
+
+    args = ap.parse_args()
+
+    train(**args)
 
 
 

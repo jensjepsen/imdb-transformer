@@ -2,7 +2,12 @@ from torchtext import data
 from torchtext import datasets
 from torchtext.vocab import GloVe
 import string
+
 def tokenize(input):
+    """
+        Naive tokenizer, that lower-cases the input
+        and splits on punctuation and whitespace
+    """
     input = input.lower()
     for p in string.punctuation:
         input = input.replace(p," ")
@@ -10,6 +15,10 @@ def tokenize(input):
 
 
 def num2words(vocab,vec):
+    """
+        Converts a vector of word indicies
+        to a list of strings
+    """
     return [vocab.itos[i] for i in vec]
 
 def get_imdb(batch_size,max_length):
@@ -38,9 +47,14 @@ def get_imdb(batch_size,max_length):
     train_iter, test_iter = data.BucketIterator.splits(
         (train, test), batch_size=batch_size)
 
-    return train_iter, test_iter,TEXT.vocab.vectors, TEXT.vocab
+    return train_iter, test_iter, TEXT.vocab.vectors, TEXT.vocab
 
 if __name__ == "__main__":
+        """
+        If run seperately, does a simple sanity check,
+        by printing different values,
+        and counting labels
+    """
     train, test, vectors,vocab = get_imdb(1,50)
     from collections import Counter
     print list(enumerate(vocab.itos[:100]))
