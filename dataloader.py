@@ -10,7 +10,9 @@ def tokenize(input):
 
 
 def num2words(vocab,vec):
-    return [vocab.itos[i] for i in vec]
+    ws = [vocab.itos[i] for i in vec]
+    print ws
+    return ws
 
 def get_imdb(batch_size,max_length):
     TEXT = data.Field(lower=True, include_lengths=True, batch_first=True,tokenize=tokenize,fix_length=max_length)
@@ -45,8 +47,9 @@ if __name__ == "__main__":
     from collections import Counter
     print list(enumerate(vocab.itos[:100]))
     cnt = Counter()
-    for b in iter(train):
-        print num2word(b.text[0].numpy())
+    for i,b in enumerate(iter(train)):
+        if i > 2: break
+        print i,num2words(vocab,b.text[0][0].numpy())
         cnt[b.label[0].item()] += 1
     print cnt
 

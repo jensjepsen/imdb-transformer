@@ -16,7 +16,7 @@ def plot_weights(model,windows,b,vocab):
     except AttributeError:
         print "No weights yet"
         return None
-    idx = 1
+    idx = 35
     text,dims = b.text[0], b.text[1]
     if windows is None:
         windows = [None] * weights.shape[0]
