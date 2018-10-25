@@ -5,6 +5,14 @@ from dataloader import get_imdb
 from model import Net
 
 try:
+    # try to import tqdm for progress updates
+    from tqdm import tqdm
+except ImportError:
+    # on failure, make tqdm a noop
+    def tqdm(x):
+        return x
+
+try:
     # try to import visdom for visualisation of attention weights
     import visdom
     from helpers import plot_weights
@@ -18,12 +26,15 @@ def val(model,test,vocab,device):
         Evaluates model on the test set
     """
     model.eval()
+
+    print "\nValidating.."
+
     if not vis is None:
         visdom_windows = None
     with torch.no_grad():
         correct = 0.0
         total = 0.0
-        for i,b in enumerate(test):
+        for i,b in enumerate(tqdm(test)):
             if not vis is None and i == 0:
                 visdom_windows = plot_weights(model,visdom_windows,b,vocab,vis)
 
@@ -51,17 +62,18 @@ def train(max_length,hidden_size,
     optimizer = optim.Adam((p for p in model.parameters() if p.requires_grad),lr=learning_rate)
     criterion = nn.CrossEntropyLoss()
 
-    loss_mavg = 0.0
+    
     for i in xrange(0,epochs+1):
+        loss_sum = 0.0
         model.train()
-        for j,b in enumerate(iter(train)):
+        for j,b in enumerate(iter(tqdm(train))):
             optimizer.zero_grad()
             model_out = model(b.text[0].to(device))
             loss = criterion(model_out,b.label.to(device))
             loss.backward()
             optimizer.step()
-            loss_mavg = loss_mavg * 0.9 + loss.item()
-        print "Epoch {}, Batch {}, Loss {}".format(i,j,loss_mavg)
+            loss_sum += loss.item()
+        print "Epoch: {}, Loss mean: {}\n".format(i,j,loss_sum / j)
 
         # Validate on test-set every epoch
         val(model,test,vocab,device)

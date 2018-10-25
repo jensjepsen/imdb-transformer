@@ -25,6 +25,7 @@ def get_imdb(batch_size,max_length):
     TEXT = data.Field(lower=True, include_lengths=True, batch_first=True,tokenize=tokenize,fix_length=max_length)
     LABEL = data.Field(sequential=False,unk_token=None,pad_token=None)
 
+    print("Loading data..\n")
 
     # make splits for data
     train, test = datasets.IMDB.splits(TEXT, LABEL)
@@ -32,8 +33,8 @@ def get_imdb(batch_size,max_length):
     # print information about the data
     print('train.fields', train.fields)
     print('len(train)', len(train))
-    print('vars(train[0])', vars(train[0]))
-    print('vars(test[0])',vars(test[0]))
+    print('len(test)', len(test))
+    print("")
 
     # build the vocabulary
     TEXT.build_vocab(train, vectors=GloVe(name='42B', dim=300,max_vectors=500000))
