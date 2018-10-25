@@ -15,17 +15,11 @@ def tokenize(input):
 
 
 def num2words(vocab,vec):
-<<<<<<< HEAD
-    ws = [vocab.itos[i] for i in vec]
-    print ws
-    return ws
-=======
     """
         Converts a vector of word indicies
         to a list of strings
     """
     return [vocab.itos[i] for i in vec]
->>>>>>> b637f61efbd83d63caeebcc12484243f68f5ed7a
 
 def get_imdb(batch_size,max_length):
     TEXT = data.Field(lower=True, include_lengths=True, batch_first=True,tokenize=tokenize,fix_length=max_length)
