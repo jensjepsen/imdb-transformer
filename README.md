@@ -3,11 +3,13 @@
 Implements a simple binary classifier for sentiment analysis, embedding sentences using a Transformer network. Transformer networks were introduced in the paper [All You Need is Attention](https://arxiv.org/abs/1706.03762), where the authors achieve state of the art performance on several NLP tasks.
 
 ## Usage
-Run `python train.py`, to train a model on the IMDB (source) reviews dataset.
+Run `python train.py`, to train a model on the IMDB reviews dataset (it will be downloaded automatically through `torchtext` if it's not present). This uses trained positional embeddings for the transformer networks, as opposed to the sinusoidal positional encodings introduced in the paper. 
+
+To use the `Transformer` module in another project, be sure to add some sort of positional encoding to the input before passing it to the module, as these are not automatically added. 
 
 #### Options
 ```
-	python train.py --help
+python train.py --help
 usage: train.py [-h] [--max_length MAX_LENGTH] [--model_size MODEL_SIZE]
                 [--epochs EPOCHS] [--learning_rate LEARNING_RATE]
                 [--device DEVICE] [--num_heads NUM_HEADS]
@@ -44,6 +46,7 @@ optional arguments:
 ## Requirements
 - Python 2.7
 - PyTorch 4.1
+- TorchText
 - NumPy
 - tqdm (optional)
 
