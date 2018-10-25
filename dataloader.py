@@ -50,12 +50,12 @@ def get_imdb(batch_size,max_length):
     return train_iter, test_iter, TEXT.vocab.vectors, TEXT.vocab
 
 if __name__ == "__main__":
-        """
+    """
         If run seperately, does a simple sanity check,
         by printing different values,
         and counting labels
     """
-    train, test, vectors,vocab = get_imdb(1,50)
+    train, test, vectors, vocab = get_imdb(1,50)
     from collections import Counter
     print list(enumerate(vocab.itos[:100]))
     cnt = Counter()
